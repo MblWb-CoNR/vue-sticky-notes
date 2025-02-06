@@ -115,7 +115,7 @@ new Vue({
     <div id="app">
     <div v-for="(column, columnIndex) in columns" :key="columnIndex" class="column">
         <h2>{{ column.title }}</h2>
-        <form v-if="canAddCard(columnIndex)" @submit.prevent="addCard(columnIndex)">
+        <form v-if="columnIndex === 0 && canAddCard(columnIndex)" @submit.prevent="addCard(columnIndex)">
             <input class="form" type="text" v-model="newCardTitle" placeholder="Заголовок" required>
             <input class="form" type="text" v-model="newCardItems[0]" placeholder="Пункт 1" required>
             <input class="form" type="text" v-model="newCardItems[1]" placeholder="Пункт 2" required>

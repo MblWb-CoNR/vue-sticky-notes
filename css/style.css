@@ -1,0 +1,10 @@
+#app {
+    display: flex;
+    gap: 20px;
+}
+
+.column {
+    border: 1px solid #ccc;
+    padding: 10px;
+    width: 300px;
+}

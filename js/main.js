@@ -6,14 +6,16 @@ new Vue({
                 { title: 'Три', cards: [] },
                 { title: 'Пять', cards: [] },
                 { title: 'Бесконечно', cards: [] }
-            ]
+            ],
+            maxCardsInColumnOne: 3,
+            maxCardsInColumnTwo: 5,
         };
     },
     methods: {
     },
     template: `
         <div id="app">
-            <div class="column">
+            <div v-for="column in columns" class="column">
                 <h2>{{ column.title }}</h2>
             </div>
         </div>

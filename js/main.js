@@ -33,81 +33,113 @@ new Vue({
                 { title: 'Пять', cards: [] },
                 { title: 'Бесконечно', cards: [] }
             ],
+            newCardTitle: '',
+            newCardItems: ['', '', '', '', ''],
             maxCardsInColumnOne: 3,
-            maxCardsInColumnTwo: 5,
-            isColumnOneLocked: false
+            maxCardsInColumnTwo: 5
         };
     },
-
+    created() {
+        const savedData = JSON.parse(localStorage.getItem('noteAppData'));
+        if (savedData) {
+            this.columns = savedData.columns;
+        }
+    },
+    watch: {
+        columns: {
+            deep: true,
+            handler() {
+                localStorage.setItem('noteAppData', JSON.stringify({ columns: this.columns }));
+            }
+        }
+    },
     methods: {
+        canAddCard(columnIndex) {
+            if (columnIndex === 0 && this.columns[0].cards.length >= this.maxCardsInColumnOne) return false;
+            if (columnIndex === 1 && this.columns[1].cards.length >= this.maxCardsInColumnTwo) return false;
+            return true;
+        },
         addCard(columnIndex) {
+            const items = this.newCardItems
+                .filter(item => item.trim() !== '')
+                .map(item => ({ text: item, completed: false }));
+            if (items.length < 3 || items.length > 5) {
+                alert('Карточка должна содержать минимум 3 пункта.');
+                return;
+            }
             const newCard = {
-                title: prompt('Введите заголовок:'),
-                items: Array.from({ length: 4 }, () => ({
-                    text: prompt('Введите пункт:'),
-                    completed: false
-                })),
-                index: this.columns[columnIndex].cards.length,
-                completedDate: null,
-                locked: false
+                title: this.newCardTitle,
+                items: items,
+                locked: false,
+                completedDate: null
             };
             this.columns[columnIndex].cards.push(newCard);
+            this.newCardTitle = '';
+            this.newCardItems = ['', '', '', '', ''];
         },
-        updateItem(payload) {
-            const { cardIndex, itemIndex, columnIndex } = payload;
+        toggleItem(columnIndex, cardIndex, itemIndex) {
             const card = this.columns[columnIndex].cards[cardIndex];
             card.items[itemIndex].completed = !card.items[itemIndex].completed;
+            this.checkCardCompletion(columnIndex, cardIndex);
+            this.checkLockState();
+        },
+        checkCardCompletion(columnIndex, cardIndex) {
+            const card = this.columns[columnIndex].cards[cardIndex];
             const completedCount = card.items.filter(item => item.completed).length;
             const totalItems = card.items.length;
-            if (columnIndex === 0) {
-                if (completedCount / totalItems > 0.5 && this.columns[1].cards.length < this.maxCardsInColumnTwo) {
-                    this.moveCard(0, 1, cardIndex);
-                } else if (completedCount === totalItems) {
-                    this.moveCard(0, 2, cardIndex);
-                }
+
+            if (columnIndex === 0 && completedCount / totalItems > 0.5) {
+                this.moveCard(columnIndex, 1, cardIndex);
+            } else if (columnIndex !== 2 && completedCount === totalItems) {
+                this.moveCard(columnIndex, 2, cardIndex);
             }
-            if (columnIndex === 1 && completedCount === totalItems) {
-                this.moveCard(1, 2, cardIndex);
-            }
-            this.checkLockState();
         },
         moveCard(fromColumn, toColumn, cardIndex) {
             const card = this.columns[fromColumn].cards.splice(cardIndex, 1)[0];
             card.completedDate = toColumn === 2 ? new Date().toLocaleString() : null;
-            card.locked = false;
             this.columns[toColumn].cards.push(card);
-            this.columns[toColumn].cards.forEach((c, i) => (c.index = i));
         },
         checkLockState() {
-            if (this.columns[1].cards.length >= this.maxCardsInColumnTwo) {
-                this.isColumnOneLocked = this.columns[0].cards.some(card =>
-                    card.items.filter(item => item.completed).length / card.items.length > 0.5
-                );
-            } else {
-                this.isColumnOneLocked = false;
-            }
-            this.columns[0].cards.forEach(card => (card.locked = this.isColumnOneLocked));
+            const isSecondColumnFull = this.columns[1].cards.length >= this.maxCardsInColumnTwo;
+            const hasOver50Percent = this.columns[0].cards.some(card => {
+                const completedCount = card.items.filter(item => item.completed).length;
+                return completedCount / card.items.length > 0.5;
+            });
+
+            this.columns[0].cards.forEach(card => {
+                card.locked = isSecondColumnFull && hasOver50Percent;
+            });
         }
     },
     template: `
-        <div id="app">
-            <div v-for="(column, columnIndex) in columns" :key="columnIndex" class="column">
-                <h2>{{ column.title }}</h2>
-                <note 
-                    v-for="(card, cardIndex) in column.cards" 
-                    :key="cardIndex" 
-                    :card="card" 
-                    :column-index="columnIndex"
-                    @update-item="updateItem"
-                ></note>
-                <button 
-                class="but"
-                @click="addCard(columnIndex)" 
-                :disabled="columnIndex === 1 && columns[1].cards.length >= maxCardsInColumnTwo" 
-                :disabled="columnIndex === 0 && columns[0].cards.length >= maxCardsInColumnOne">
-                    Добавить 
-                </button>
-            </div>
+    <div id="app">
+    <div v-for="(column, columnIndex) in columns" :key="columnIndex" class="column">
+        <h2>{{ column.title }}</h2>
+        <form v-if="canAddCard(columnIndex)" @submit.prevent="addCard(columnIndex)">
+            <input class="form" type="text" v-model="newCardTitle" placeholder="Заголовок" required>
+            <input class="form" type="text" v-model="newCardItems[0]" placeholder="Пункт 1" required>
+            <input class="form" type="text" v-model="newCardItems[1]" placeholder="Пункт 2" required>
+            <input class="form" type="text" v-model="newCardItems[2]" placeholder="Пункт 3" required>
+            <input class="form" type="text" v-model="newCardItems[3]" placeholder="Пункт 4 (опционально)">
+            <input class="form" type="text" v-model="newCardItems[4]" placeholder="Пункт 5 (опционально)">
+            <button type="submit" class="but">Добавить</button>
+        </form>
+        <div v-for="(card, cardIndex) in column.cards" :key="cardIndex" class="note" :class="{ locked: card.locked }">
+            <p class="title">{{ card.title }}</p>
+            <ul>
+                <li v-for="(item, index) in card.items" :key="index" class="anti-dots">
+                    <input
+                        type="checkbox"
+                        :checked="item.completed"
+                        @change="toggleItem(columnIndex, cardIndex, index)"
+                        :disabled="card.locked"
+                    />
+                    {{ item.text }}
+                </li>
+            </ul>
+            <p v-if="card.completedDate">Дата окончания: {{ card.completedDate }}</p>
         </div>
+    </div>
+</div>
     `
 });

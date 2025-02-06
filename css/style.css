@@ -3,3 +3,76 @@
     justify-content: space-around;
 }
 
+body{
+    background-color: rgb(213,218,250);
+}
+
+.column {
+    margin-top: 20px;
+    border: 1px solid gray;
+    padding: 25px;
+    width: 320px;
+    background-color: rgb(253,190,207);
+    border-radius: 10px;
+}
+
+.note {
+    border: 1px solid gray;
+    background-color: white;
+    border-radius: 15px;
+    padding: 10px;
+    box-shadow: 6px 9px 9px 0 rgba(0, 0, 0, 0.54);
+    margin-top: 10px;
+}
+
+.title {
+    font-family: sans-serif;
+    font-size: 18px;
+
+}
+
+.anti-dots {
+    list-style-type: none;
+}
+
+input {
+    font-family: sans-serif;
+}
+
+h2 {
+    font-family: sans-serif;
+    text-align: center;
+}
+
+ul {
+    padding: 0;
+}
+
+.but {
+    background-color: rgb(223,186,230);
+    box-shadow: 14px 9px 9px 0 rgba(0, 0, 0, 0.54);
+    margin-top: 20px;
+    padding: 10px;
+    font-family: sans-serif;
+    font-size: 14px;
+    border-radius: 5px;
+    border: 1px solid gray;
+}
+
+p{
+    font-family: sans-serif;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+.form {
+    height: 30px;
+    border: 1px solid gray;
+    border-radius: 5px;
+    margin-top: 15px;
+    padding: 10px;
+    box-shadow: 6px 9px 9px 0 rgba(0, 0, 0, 0.54);
+}

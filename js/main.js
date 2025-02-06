@@ -8,13 +8,16 @@ Vue.component('note', {
                      <input
                       type="checkbox"
                       :checked="item.completed"
-                      />
+                      @change="switchItem(index)"/>
                      {{ item.text }}
                 </li>
             </ul>
          </div>
     `,
     methods: {
+        switchItem(index) {
+            this.$emit('update-item', { cardIndex: this.card.index, itemIndex: index, columnIndex: this.columnIndex });
+        }
     }
 });
 
@@ -51,6 +54,16 @@ new Vue({
                 completedDate: null,
                 locked: false
             };
+            this.columns[columnIndex].cards.push(newCard);
+        },
+        updateItem(payload) {
+            const { cardIndex, itemIndex, columnIndex } = payload;
+            const card = this.columns[columnIndex].cards[cardIndex];
+
+            card.items[itemIndex].completed = !card.items[itemIndex].completed;
+
+            const completedCount = card.items.filter(item => item.completed).length;
+            const totalItems = card.items.length;
         },
     },
     template: `

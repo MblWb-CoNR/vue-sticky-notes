@@ -61,7 +61,7 @@ new Vue({
         },
         addCard(columnIndex) {
             const items = this.newCardItems
-                .filter(item => item.trim() !== '') // Убираем пустые пункты
+                .filter(item => item.trim() !== '')
                 .map(item => ({ text: item, completed: false }));
 
             if (items.length < 3 || items.length > 5) {
@@ -73,12 +73,11 @@ new Vue({
                 title: this.newCardTitle,
                 items: items,
                 locked: false,
-                completedDate: null
+                completedDate: null,
+                reasonForMove: ''
             };
 
             this.columns[columnIndex].cards.push(newCard);
-
-            // Очистка формы
             this.newCardTitle = '';
             this.newCardItems = ['', '', '', '', ''];
             this.checkLockState();
@@ -97,25 +96,30 @@ new Vue({
             const completedCount = card.items.filter(item => item.completed).length;
             const totalItems = card.items.length;
 
-            // Условия перемещения
             if (columnIndex === 0 && completedCount / totalItems > 0.5) {
                 this.moveCard(columnIndex, 1, cardIndex);
             } else if (columnIndex === 1 && completedCount / totalItems < 0.5) {
-                this.moveCard(columnIndex, 0, cardIndex);
+                this.askForReasonAndMove(columnIndex, 0, cardIndex); // Запрашиваем причину
             } else if (columnIndex !== 2 && completedCount === totalItems) {
                 this.moveCard(columnIndex, 2, cardIndex);
             }
         },
         moveCard(fromColumn, toColumn, cardIndex) {
-
-            // Проверка ДО перемещения
-            this.checkLockState();
-
             const card = this.columns[fromColumn].cards.splice(cardIndex, 1)[0];
             card.completedDate = toColumn === 2 ? new Date().toLocaleString() : null;
             this.columns[toColumn].cards.push(card);
+            this.checkLockState();
+        },
+        askForReasonAndMove(fromColumn, toColumn, cardIndex) {
+            const reason = prompt('Укажите причину перемещения карточки обратно в первую колонку:');
+            if (reason === null || reason.trim() === '') {
+                alert('Причина перемещения не указана. Карточка не будет перемещена.');
+                return;
+            }
 
-
+            const card = this.columns[fromColumn].cards[cardIndex];
+            card.reasonForMove = reason; // Сохраняем причину
+            this.moveCard(fromColumn, toColumn, cardIndex);
         },
         checkLockState() {
             const isSecondColumnFull = this.columns[1].cards.length >= this.maxCardsInColumnTwo;
@@ -146,33 +150,34 @@ new Vue({
     },
     template: `
     <div id="app">
-        <div v-for="(column, columnIndex) in columns" :key="columnIndex" class="column">
-            <h2>{{ column.title }}</h2>
-            <form v-if="columnIndex === 0 && canAddCard(columnIndex)" @submit.prevent="addCard(columnIndex)">
-                <input class="form" type="text" v-model="newCardTitle" placeholder="Заголовок" required>
-                <input class="form" type="text" v-model="newCardItems[0]" placeholder="Пункт 1" required>
-                <input class="form" type="text" v-model="newCardItems[1]" placeholder="Пункт 2" required>
-                <input class="form" type="text" v-model="newCardItems[2]" placeholder="Пункт 3" required>
-                <input class="form" type="text" v-model="newCardItems[3]" placeholder="Пункт 4 (опционально)">
-                <input class="form" type="text" v-model="newCardItems[4]" placeholder="Пункт 5 (опционально)">
-                <button type="submit" class="but" :disabled="isAddButtonDisabled">Добавить</button>
-            </form>
-            <div v-for="(card, cardIndex) in column.cards" :key="cardIndex" class="note" :class="{ locked: card.locked }">
-                <p class="title">{{ card.title }}</p>
-                <ul>
-                    <li v-for="(item, index) in card.items" :key="index" class="anti-dots">
-                        <input
-                            type="checkbox"
-                            :checked="item.completed"
-                            @change="toggleItem(columnIndex, cardIndex, index)"
-                            :disabled="card.locked"
-                        />
-                        {{ item.text }}
-                    </li>
-                </ul>
-                <p v-if="card.completedDate">Дата окончания: {{ card.completedDate }}</p>
-            </div>
+    <div v-for="(column, columnIndex) in columns" :key="columnIndex" class="column">
+        <h2>{{ column.title }}</h2>
+        <form v-if="columnIndex === 0 && canAddCard(columnIndex)" @submit.prevent="addCard(columnIndex)">
+            <input class="form" type="text" v-model="newCardTitle" placeholder="Заголовок" required>
+            <input class="form" type="text" v-model="newCardItems[0]" placeholder="Пункт 1" required>
+            <input class="form" type="text" v-model="newCardItems[1]" placeholder="Пункт 2" required>
+            <input class="form" type="text" v-model="newCardItems[2]" placeholder="Пункт 3" required>
+            <input class="form" type="text" v-model="newCardItems[3]" placeholder="Пункт 4 (опционально)">
+            <input class="form" type="text" v-model="newCardItems[4]" placeholder="Пункт 5 (опционально)">
+            <button type="submit" class="but" :disabled="isAddButtonDisabled">Добавить</button>
+        </form>
+        <div v-for="(card, cardIndex) in column.cards" :key="cardIndex" class="note" :class="{ locked: card.locked }">
+            <p class="title">{{ card.title }}</p>
+            <ul>
+                <li v-for="(item, index) in card.items" :key="index" class="anti-dots">
+                    <input
+                        type="checkbox"
+                        :checked="item.completed"
+                        @change="toggleItem(columnIndex, cardIndex, index)"
+                        :disabled="card.locked"
+                    />
+                    {{ item.text }}
+                </li>
+            </ul>
+            <p v-if="card.completedDate">Дата окончания: {{ card.completedDate }}</p>
+            <p v-if="card.reasonForMove">Причина перемещения: {{ card.reasonForMove }}</p>
         </div>
     </div>
+</div>
     `
 });
